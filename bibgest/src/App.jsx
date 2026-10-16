@@ -1,122 +1,151 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+
+import { useState } from "react";
+import "./index.css";
+
+const librosIniciales = [
+  { id: 1, titulo: "Cien años de soledad", autor: "Gabriel García Márquez", estado: "Disponible" },
+  { id: 2, titulo: "El principito", autor: "Antoine de Saint-Exupéry", estado: "Prestado" },
+  { id: 3, titulo: "Don Quijote de la Mancha", autor: "Miguel de Cervantes", estado: "Disponible" },
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [libros] = useState(librosIniciales);
+  const [busqueda, setBusqueda] = useState("");
+
+  const librosFiltrados = libros.filter((libro) =>
+    `${libro.titulo} ${libro.autor}`
+      .toLowerCase()
+      .includes(busqueda.toLowerCase())
+  );
+
+  const disponibles = libros.filter(
+    (libro) => libro.estado === "Disponible"
+  ).length;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <aside className="sidebar">
+        <h1 className="logo">Bib<span>Gest</span></h1>
+        <p className="menu-label">MENÚ PRINCIPAL</p>
 
-      <div className="ticks"></div>
+        <nav>
+          <a className="nav-item active" href="#inicio">▦ <span>Inicio</span></a>
+          <a className="nav-item" href="#libros">▤ <span>Libros</span></a>
+          <a className="nav-item" href="#prestamos">⇄ <span>Préstamos</span></a>
+          <a className="nav-item" href="#lectores">♙ <span>Lectores</span></a>
+        </nav>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="sidebar-footer">
+          <span className="avatar">BG</span>
+          <div>
+            <strong>Administrador</strong>
+            <small>Biblioteca</small>
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </aside>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <main className="main-content" id="inicio">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">SISTEMA DE GESTIÓN</p>
+            <h2>Panel principal</h2>
+          </div>
+          <span className="status"><span /> Sistema activo</span>
+        </header>
+
+        <section className="welcome">
+          <div>
+            <p>BIENVENIDO A BIBGEST</p>
+            <h2>Tu biblioteca, más organizada.</h2>
+            <span>Administra libros y controla los préstamos desde un solo lugar.</span>
+          </div>
+          <div className="book-illustration" aria-hidden="true">▤</div>
+        </section>
+
+        <section className="stats">
+          <article className="stat-card">
+            <span className="stat-icon purple">▤</span>
+            <p>Total de libros</p>
+            <strong>{libros.length}</strong>
+            <small>Libros registrados</small>
+          </article>
+
+          <article className="stat-card">
+            <span className="stat-icon green">✓</span>
+            <p>Disponibles</p>
+            <strong>{disponibles}</strong>
+            <small>Listos para préstamo</small>
+          </article>
+
+          <article className="stat-card">
+            <span className="stat-icon orange">⇄</span>
+            <p>Préstamos activos</p>
+            <strong>{libros.length - disponibles}</strong>
+            <small>Libros prestados</small>
+          </article>
+
+          <article className="stat-card">
+            <span className="stat-icon blue">♙</span>
+            <p>Lectores</p>
+            <strong>0</strong>
+            <small>Usuarios registrados</small>
+          </article>
+        </section>
+
+        <section className="catalog" id="libros">
+          <div className="section-heading">
+            <div>
+              <h2>Catálogo de libros</h2>
+              <p>Consulta los libros de la biblioteca.</p>
+            </div>
+            <span className="book-count">{librosFiltrados.length} libros</span>
+          </div>
+
+          <input
+            className="search"
+            type="search"
+            placeholder="Buscar por título o autor..."
+            value={busqueda}
+            onChange={(event) => setBusqueda(event.target.value)}
+          />
+
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>TÍTULO</th>
+                  <th>AUTOR</th>
+                  <th>ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {librosFiltrados.map((libro) => (
+                  <tr key={libro.id}>
+                    <td className="book-title">{libro.titulo}</td>
+                    <td>{libro.autor}</td>
+                    <td>
+                      <span className={`badge ${libro.estado === "Disponible" ? "available" : "loaned"}`}>
+                        {libro.estado}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {librosFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan="3" className="empty">
+                      No se encontraron libros.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <footer>© 2026 BibGest · Proyecto Integrador</footer>
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
