@@ -471,3 +471,18 @@ footer {
     flex-direction: column;
   }
 }
+
+.edit-button {
+  padding: 7px 12px;
+  border: 1px solid #e4e1ed;
+  border-radius: 7px;
+  background: white;
+  color: #624bd0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-button:hover {
+  background: #f1eeff;
+}

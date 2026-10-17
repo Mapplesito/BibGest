@@ -21,12 +21,13 @@ function App() {
   useEffect(() => {
   localStorage.setItem("bibgest-libros", JSON.stringify(libros));
   }, [libros]);
-  
+
   const [busqueda, setBusqueda] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [libroEditando, setLibroEditando] = useState(null);
 
   const librosFiltrados = libros.filter((libro) =>
     `${libro.titulo} ${libro.autor}`
@@ -37,6 +38,14 @@ function App() {
   const disponibles = libros.filter(
     (libro) => libro.estado === "Disponible"
   ).length;
+
+  function editarLibro(libro) {
+  setLibroEditando(libro);
+  setTitulo(libro.titulo);
+  setAutor(libro.autor);
+  setMensaje("");
+  setMostrarFormulario(true);
+  }
 
   function registrarLibro(event) {
     event.preventDefault();
@@ -59,6 +68,33 @@ function App() {
     setMensaje("¡Libro registrado correctamente!");
     setMostrarFormulario(false);
   }
+
+  function actualizarLibro(event) {
+  event.preventDefault();
+
+  if (!titulo.trim() || !autor.trim()) {
+    setMensaje("Completa el título y el autor.");
+    return;
+  }
+
+  setLibros((librosActuales) =>
+    librosActuales.map((libro) =>
+      libro.id === libroEditando.id
+        ? {
+            ...libro,
+            titulo: titulo.trim(),
+            autor: autor.trim(),
+          }
+        : libro
+    )
+  );
+
+  setTitulo("");
+  setAutor("");
+  setLibroEditando(null);
+  setMostrarFormulario(false);
+  setMensaje("¡Libro actualizado correctamente!");
+}
 
   return (
     <div className="app">
@@ -149,8 +185,9 @@ function App() {
           </div>
 
           {mostrarFormulario && (
-            <form className="book-form" onSubmit={registrarLibro}>
-              <h3>Registrar un libro</h3>
+            <form className="book-form" 
+            onSubmit={libroEditando ? actualizarLibro : registrarLibro}>
+            <h3>{libroEditando ? "Editar libro" : "Registrar un libro"}</h3>
 
               <label htmlFor="titulo">Título del libro</label>
               <input
@@ -197,24 +234,41 @@ function App() {
                   <th>TÍTULO</th>
                   <th>AUTOR</th>
                   <th>ESTADO</th>
+                  <th>ACCIONES</th>
                 </tr>
               </thead>
               <tbody>
                 {librosFiltrados.map((libro) => (
                   <tr key={libro.id}>
-                    <td className="book-title">{libro.titulo}</td>
-                    <td>{libro.autor}</td>
-                    <td>
-                      <span className={`badge ${libro.estado === "Disponible" ? "available" : "loaned"}`}>
-                        {libro.estado}
-                      </span>
-                    </td>
-                  </tr>
+                  <td className="book-title">{libro.titulo}</td>
+
+                  <td>{libro.autor}</td>
+
+                  <td>
+                    <span
+                      className={`badge ${
+                        libro.estado === "Disponible" ? "available" : "loaned"
+                      }`}
+                    >
+                      {libro.estado}
+                    </span>
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      className="edit-button"
+                      onClick={() => editarLibro(libro)}
+                    >
+                      Editar
+                    </button>
+                  </td>
+                </tr>
                 ))}
 
                 {librosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan="3" className="empty">
+                    <td colSpan="4" className="empty">
                       No se encontraron libros.
                     </td>
                   </tr>
