@@ -9,8 +9,12 @@ const librosIniciales = [
 ];
 
 function App() {
-  const [libros] = useState(librosIniciales);
+  const [libros, setLibros] = useState(librosIniciales);
   const [busqueda, setBusqueda] = useState("");
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [titulo, setTitulo] = useState("");
+  const [autor, setAutor] = useState("");
+  const [mensaje, setMensaje] = useState("");
 
   const librosFiltrados = libros.filter((libro) =>
     `${libro.titulo} ${libro.autor}`
@@ -21,6 +25,28 @@ function App() {
   const disponibles = libros.filter(
     (libro) => libro.estado === "Disponible"
   ).length;
+
+  function registrarLibro(event) {
+    event.preventDefault();
+
+    if (!titulo.trim() || !autor.trim()) {
+      setMensaje("Completa el título y el autor.");
+      return;
+    }
+
+    const nuevoLibro = {
+      id: Date.now(),
+      titulo: titulo.trim(),
+      autor: autor.trim(),
+      estado: "Disponible",
+    };
+
+    setLibros((librosActuales) => [...librosActuales, nuevoLibro]);
+    setTitulo("");
+    setAutor("");
+    setMensaje("¡Libro registrado correctamente!");
+    setMostrarFormulario(false);
+  }
 
   return (
     <div className="app">
@@ -96,10 +122,53 @@ function App() {
           <div className="section-heading">
             <div>
               <h2>Catálogo de libros</h2>
-              <p>Consulta los libros de la biblioteca.</p>
+              <p>Consulta y registra los libros de la biblioteca.</p>
             </div>
-            <span className="book-count">{librosFiltrados.length} libros</span>
+
+            <button
+              className="primary-button"
+              onClick={() => {
+                setMensaje("");
+                setMostrarFormulario(!mostrarFormulario);
+              }}
+            >
+              {mostrarFormulario ? "Cancelar" : "+ Agregar libro"}
+            </button>
           </div>
+
+          {mostrarFormulario && (
+            <form className="book-form" onSubmit={registrarLibro}>
+              <h3>Registrar un libro</h3>
+
+              <label htmlFor="titulo">Título del libro</label>
+              <input
+                id="titulo"
+                value={titulo}
+                onChange={(event) => setTitulo(event.target.value)}
+                placeholder="Ej. El nombre del viento"
+                maxLength={120}
+                required
+              />
+
+              <label htmlFor="autor">Autor</label>
+              <input
+                id="autor"
+                value={autor}
+                onChange={(event) => setAutor(event.target.value)}
+                placeholder="Nombre del autor"
+                maxLength={100}
+                required
+              />
+
+              <button className="primary-button" type="submit">
+                Guardar libro
+              </button>
+            </form>
+          )}
+
+          {mensaje && (
+            <p className="feedback" role="status">{mensaje}</p>
+          )}
 
           <input
             className="search"
@@ -130,6 +199,7 @@ function App() {
                     </td>
                   </tr>
                 ))}
+
                 {librosFiltrados.length === 0 && (
                   <tr>
                     <td colSpan="3" className="empty">
