@@ -486,3 +486,24 @@ footer {
 .edit-button:hover {
   background: #f1eeff;
 }
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-button {
+  padding: 7px 12px;
+  border: 1px solid #f2d4d4;
+  border-radius: 7px;
+  background: white;
+  color: #c03939;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background: #fff0f0;
+}

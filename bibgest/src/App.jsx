@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import "./index.css";
 
@@ -10,16 +9,17 @@ const librosIniciales = [
 
 function App() {
   const [libros, setLibros] = useState(() => {
-  const librosGuardados = localStorage.getItem("bibgest-libros");
+    const librosGuardados = localStorage.getItem("bibgest-libros");
 
-  if (librosGuardados) {
-    return JSON.parse(librosGuardados);
-  }
+    if (librosGuardados) {
+      return JSON.parse(librosGuardados);
+    }
 
-  return librosIniciales;
+    return librosIniciales;
   });
+
   useEffect(() => {
-  localStorage.setItem("bibgest-libros", JSON.stringify(libros));
+    localStorage.setItem("bibgest-libros", JSON.stringify(libros));
   }, [libros]);
 
   const [busqueda, setBusqueda] = useState("");
@@ -40,11 +40,11 @@ function App() {
   ).length;
 
   function editarLibro(libro) {
-  setLibroEditando(libro);
-  setTitulo(libro.titulo);
-  setAutor(libro.autor);
-  setMensaje("");
-  setMostrarFormulario(true);
+    setLibroEditando(libro);
+    setTitulo(libro.titulo);
+    setAutor(libro.autor);
+    setMensaje("");
+    setMostrarFormulario(true);
   }
 
   function registrarLibro(event) {
@@ -69,32 +69,49 @@ function App() {
     setMostrarFormulario(false);
   }
 
-  function actualizarLibro(event) {
-  event.preventDefault();
+  // CORREGIDO: JavaScript encapsula eliminarLibro dentro de actualizarLibro, por lo que el botón del JSX no puede verla (causando el error de que no se lee).
+  function eliminarLibro(libro) {
+    const confirmar = window.confirm(
+      `¿Seguro que deseas eliminar "${libro.titulo}"?`
+    );
 
-  if (!titulo.trim() || !autor.trim()) {
-    setMensaje("Completa el título y el autor.");
-    return;
+    if (!confirmar) {
+      return;
+    }
+
+    setLibros((librosActuales) =>
+      librosActuales.filter((item) => item.id !== libro.id)
+    );
+
+    setMensaje(`Se eliminó "${libro.titulo}" correctamente.`);
   }
 
-  setLibros((librosActuales) =>
-    librosActuales.map((libro) =>
-      libro.id === libroEditando.id
-        ? {
-            ...libro,
-            titulo: titulo.trim(),
-            autor: autor.trim(),
-          }
-        : libro
-    )
-  );
+  function actualizarLibro(event) {
+    event.preventDefault();
 
-  setTitulo("");
-  setAutor("");
-  setLibroEditando(null);
-  setMostrarFormulario(false);
-  setMensaje("¡Libro actualizado correctamente!");
-}
+    if (!titulo.trim() || !autor.trim()) {
+      setMensaje("Completa el título y el autor.");
+      return;
+    }
+
+    setLibros((librosActuales) =>
+      librosActuales.map((libro) =>
+        libro.id === libroEditando.id
+          ? {
+              ...libro,
+              titulo: titulo.trim(),
+              autor: autor.trim(),
+            }
+          : libro
+      )
+    );
+
+    setTitulo("");
+    setAutor("");
+    setLibroEditando(null);
+    setMostrarFormulario(false);
+    setMensaje("¡Libro actualizado correctamente!");
+  }
 
   return (
     <div className="app">
@@ -177,6 +194,9 @@ function App() {
               className="primary-button"
               onClick={() => {
                 setMensaje("");
+                setLibroEditando(null);
+                setTitulo("");
+                setAutor("");
                 setMostrarFormulario(!mostrarFormulario);
               }}
             >
@@ -254,7 +274,7 @@ function App() {
                     </span>
                   </td>
 
-                  <td>
+                  <td className="actions-cell">
                     <button
                       type="button"
                       className="edit-button"
@@ -262,7 +282,16 @@ function App() {
                     >
                       Editar
                     </button>
+
+                    <button
+                      type="button"
+                      className="delete-button"
+                      onClick={() => eliminarLibro(libro)}
+                    >
+                      Eliminar
+                    </button>
                   </td>
+                  
                 </tr>
                 ))}
 
