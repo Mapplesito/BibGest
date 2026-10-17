@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./index.css";
 
 const librosIniciales = [
@@ -9,7 +9,19 @@ const librosIniciales = [
 ];
 
 function App() {
-  const [libros, setLibros] = useState(librosIniciales);
+  const [libros, setLibros] = useState(() => {
+  const librosGuardados = localStorage.getItem("bibgest-libros");
+
+  if (librosGuardados) {
+    return JSON.parse(librosGuardados);
+  }
+
+  return librosIniciales;
+  });
+  useEffect(() => {
+  localStorage.setItem("bibgest-libros", JSON.stringify(libros));
+  }, [libros]);
+  
   const [busqueda, setBusqueda] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [titulo, setTitulo] = useState("");
