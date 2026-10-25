@@ -507,3 +507,127 @@ footer {
 .delete-button:hover {
   background: #fff0f0;
 }
+
+
+/* Acciones de libros y lectores */
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-button,
+.delete-button {
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.edit-button {
+  border: 1px solid #e4e1ed;
+  color: #624bd0;
+}
+
+.edit-button:hover {
+  background: #f1eeff;
+  transform: translateY(-1px);
+}
+
+.delete-button {
+  border: 1px solid #f2d4d4;
+  color: #c03939;
+}
+
+.delete-button:hover {
+  background: #fff0f0;
+  transform: translateY(-1px);
+}
+
+/* Formularios compartidos */
+.book-form {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  margin-top: 22px;
+  background: #faf9ff;
+  border: 1px solid #e9e4ff;
+  border-radius: 12px;
+}
+
+.book-form h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.book-form label {
+  color: #66647a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.book-form input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e4e1ed;
+  border-radius: 8px;
+  background: white;
+  outline: none;
+  font-size: 12px;
+}
+
+.book-form input:focus {
+  border-color: #8a76ec;
+  box-shadow: 0 0 0 3px #eeeaff;
+}
+
+.book-form .primary-button {
+  justify-self: start;
+  margin-top: 8px;
+}
+
+/* Mensajes de confirmación y validación */
+.feedback {
+  padding: 10px 13px;
+  margin: 14px 0 0;
+  border-radius: 8px;
+  background: #e6f8ee;
+  color: #247b50;
+  font-size: 12px;
+}
+
+/* Campo de búsqueda */
+.search {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 20px 0;
+}
+
+/* Encabezados de catálogo */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 650px) {
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .actions-cell {
+    min-width: 150px;
+  }
+}
+
