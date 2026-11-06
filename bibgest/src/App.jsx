@@ -14,6 +14,7 @@ import { EliminarLector } from "./components/lectores/EliminarLector";
 // Importaciones de Préstamos
 import { RegistrarPrestamo } from "./components/prestamos/RegistrarPrestamo";
 import { RegistrarDevolucion } from "./components/prestamos/RegistrarDevolucion";
+import { HistorialPrestamos } from "./components/prestamos/HistorialPrestamos";
 
 const librosIniciales = [
   { id: 1, titulo: "Cien años de soledad", autor: "Gabriel García Márquez", estado: "Disponible" },
@@ -633,6 +634,9 @@ function App() {
                 </tbody>
               </table>
             </div>
+
+            {/* Componente del Historial de préstamos finalizados */}
+            <HistorialPrestamos prestamos={prestamos} libros={libros} lectores={lectores} />
           </section>
         )}
 
