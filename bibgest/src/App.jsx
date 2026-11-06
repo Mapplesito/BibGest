@@ -82,7 +82,6 @@ function App() {
     (prestamo) => prestamo.estado === "Activo"
   );
 
-  // Nuevo cálculo: Préstamos vencidos (activos cuya fecha límite ya pasó respecto a hoy)
   const prestamosVencidos = prestamos.filter((prestamo) => {
     if (prestamo.estado !== "Activo") return false;
     return prestamo.fechaLimite < fechaHoy();
@@ -130,8 +129,23 @@ function App() {
   function guardarLibro(event) {
     event.preventDefault();
 
-    if (!titulo.trim() || !autor.trim()) {
+    const tituloLimpio = titulo.trim();
+    const autorLimpio = autor.trim();
+
+    if (!tituloLimpio || !autorLimpio) {
       setMensaje("Completa el título y el autor.");
+      return;
+    }
+
+    const libroExiste = libros.some(
+      (item) =>
+        item.titulo.toLowerCase() === tituloLimpio.toLowerCase() &&
+        item.autor.toLowerCase() === autorLimpio.toLowerCase() &&
+        item.id !== libroEditando?.id
+    );
+
+    if (libroExiste) {
+      setMensaje("Ya existe un libro registrado con ese título y autor.");
       return;
     }
 
@@ -139,7 +153,7 @@ function App() {
       setLibros((actuales) =>
         actuales.map((libro) =>
           libro.id === libroEditando.id
-            ? { ...libro, titulo: titulo.trim(), autor: autor.trim() }
+            ? { ...libro, titulo: tituloLimpio, autor: autorLimpio }
             : libro
         )
       );
@@ -149,8 +163,8 @@ function App() {
         ...actuales,
         {
           id: Date.now(),
-          titulo: titulo.trim(),
-          autor: autor.trim(),
+          titulo: tituloLimpio,
+          autor: autorLimpio,
           estado: "Disponible",
         },
       ]);
@@ -283,8 +297,17 @@ function App() {
       return;
     }
 
+    const lectorTienePrestamoActivo = prestamos.some(
+      (p) => p.lectorId === lectorId && p.estado === "Activo"
+    );
+
+    if (lectorTienePrestamoActivo) {
+      setMensaje("Este lector ya tiene un préstamo activo. Debe devolverlo antes de solicitar otro.");
+      return;
+    }
+
     if (!fechaPrestamo || !fechaLimite || fechaLimite < fechaPrestamo) {
-      setMensaje("La fecha prevista debe ser igual o posterior al préstamo.");
+      setMensaje("La fecha prevista de devolución debe ser igual o posterior al préstamo.");
       return;
     }
 
