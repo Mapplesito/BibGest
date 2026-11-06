@@ -1,0 +1,66 @@
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+th {
+  color: #9694a6;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 15px 12px;
+  background: #faf9fc;
+}
+
+td {
+  padding: 17px 12px;
+  border-bottom: 1px solid #f0eef5;
+  color: #77768a;
+}
+
+.book-title {
+  color: #302e45;
+  font-weight: 600;
+}
+
+.edit-button {
+  padding: 7px 12px;
+  border: 1px solid #e4e1ed;
+  border-radius: 7px;
+  background: white;
+  color: #624bd0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-button:hover {
+  background: #f1eeff;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.delete-button {
+  padding: 7px 12px;
+  border: 1px solid #f2d4d4;
+  border-radius: 7px;
+  background: white;
+  color: #c03939;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background: #fff0f0;
+}

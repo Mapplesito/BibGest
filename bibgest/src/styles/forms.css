@@ -65,38 +65,31 @@
   font-size: 12px;
 }
 
-.edit-button {
-  padding: 7px 12px;
+.book-form select {
+  width: 100%;
+  padding: 12px;
   border: 1px solid #e4e1ed;
-  border-radius: 7px;
+  border-radius: 8px;
   background: white;
-  color: #624bd0;
+  color: #25243a;
+  outline: none;
+  font: inherit;
   font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
-.edit-button:hover {
-  background: #f1eeff;
+.book-form select:focus {
+  border-color: #8a76ec;
+  box-shadow: 0 0 0 3px #eeeaff;
 }
 
-.actions-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.book-form .primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.delete-button {
-  padding: 7px 12px;
-  border: 1px solid #f2d4d4;
-  border-radius: 7px;
-  background: white;
-  color: #c03939;
+.form-hint {
+  color: #b87924;
   font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.delete-button:hover {
-  background: #fff0f0;
+  line-height: 1.5;
 }

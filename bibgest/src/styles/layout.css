@@ -75,3 +75,26 @@ nav {
   color: #9291a3;
   margin-top: 5px;
 }
+
+.main-content {
+  margin-left: 245px;
+  padding: 35px 42px;
+  max-width: 1700px;
+}
+
+.topbar, .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+}
+
+.topbar h2 {
+  font-size: 25px;
+  margin: 0;
+  letter-spacing: -0.8px;
+}

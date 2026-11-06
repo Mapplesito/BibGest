@@ -64,4 +64,8 @@
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .table-wrapper table {
+    min-width: 650px;
+  }
 }
