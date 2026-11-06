@@ -82,6 +82,12 @@ function App() {
     (prestamo) => prestamo.estado === "Activo"
   );
 
+  // Nuevo cálculo: Préstamos vencidos (activos cuya fecha límite ya pasó respecto a hoy)
+  const prestamosVencidos = prestamos.filter((prestamo) => {
+    if (prestamo.estado !== "Activo") return false;
+    return prestamo.fechaLimite < fechaHoy();
+  });
+
   const librosDisponibles = libros.filter(
     (libro) => libro.estado === "Disponible"
   );
@@ -391,20 +397,50 @@ function App() {
             </section>
 
             <section className="stats">
-              <article className="stat-card"><span className="stat-icon purple">▤</span><p>Total de libros</p><strong>{libros.length}</strong><small>Libros registrados</small></article>
-              <article className="stat-card"><span className="stat-icon green">✓</span><p>Disponibles</p><strong>{librosDisponibles.length}</strong><small>Listos para préstamo</small></article>
-              <article className="stat-card"><span className="stat-icon orange">⇄</span><p>Préstamos activos</p><strong>{prestamosActivos.length}</strong><small>Préstamos sin devolver</small></article>
-              <article className="stat-card"><span className="stat-icon blue">♙</span><p>Lectores</p><strong>{lectores.length}</strong><small>Usuarios registrados</small></article>
+              <article className="stat-card">
+                <span className="stat-icon purple">▤</span>
+                <p>Total de libros</p>
+                <strong>{libros.length}</strong>
+                <small>Catálogo general</small>
+              </article>
+              <article className="stat-card">
+                <span className="stat-icon green">✓</span>
+                <p>Disponibles</p>
+                <strong>{librosDisponibles.length}</strong>
+                <small>Listos para préstamo</small>
+              </article>
+              <article className="stat-card">
+                <span className="stat-icon orange">⇄</span>
+                <p>Préstamos activos</p>
+                <strong>{prestamosActivos.length}</strong>
+                <small>En poder de lectores</small>
+              </article>
+              <article className="stat-card" style={{ borderColor: prestamosVencidos.length > 0 ? "#f2d4d4" : undefined }}>
+                <span className="stat-icon" style={{ background: "#fff0f0", color: "#c03939" }}>⚠️</span>
+                <p>Préstamos vencidos</p>
+                <strong style={{ color: prestamosVencidos.length > 0 ? "#c03939" : "inherit" }}>{prestamosVencidos.length}</strong>
+                <small>Requieren atención</small>
+              </article>
             </section>
 
             <section className="catalog">
               <div className="section-heading">
-                <div><h2>Resumen de la biblioteca</h2><p>Estado actual de los registros.</p></div>
+                <div>
+                  <h2>Resumen general de la biblioteca</h2>
+                  <p>Estado actual de operaciones y usuarios.</p>
+                </div>
               </div>
-              <p>Libros registrados: <strong>{libros.length}</strong></p>
-              <p>Lectores registrados: <strong>{lectores.length}</strong></p>
-              <p>Préstamos activos: <strong>{prestamosActivos.length}</strong></p>
-              <button className="primary-button" onClick={() => cambiarSeccion("prestamos")}>Ir a préstamos</button>
+              <div style={{ display: "grid", gap: "10px", marginTop: "15px" }}>
+                <p>📚 Libros totales registrados: <strong>{libros.length}</strong> (Disponibles: {librosDisponibles.length} | Prestados: {libros.length - librosDisponibles.length})</p>
+                <p>👤 Lectores inscritos en el sistema: <strong>{lectores.length}</strong></p>
+                <p>🔄 Préstamos activos en curso: <strong>{prestamosActivos.length}</strong></p>
+                <p style={{ color: prestamosVencidos.length > 0 ? "#c03939" : "inherit" }}>
+                  🚨 Alertas de devolución vencida: <strong>{prestamosVencidos.length}</strong>
+                </p>
+              </div>
+              <div style={{ marginTop: "20px" }}>
+                <button className="primary-button" onClick={() => cambiarSeccion("prestamos")}>Gestionar préstamos</button>
+              </div>
             </section>
           </>
         )}
