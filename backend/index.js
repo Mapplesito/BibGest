@@ -21,6 +21,35 @@ const pool = new Pool({
 });
 
 // ==========================================
+// FUNCIONES AUXILIARES
+// ==========================================
+
+// Valida fechas con formato YYYY-MM-DD sin aceptar fechas inexistentes.
+function fechaValida(fecha) {
+  if (typeof fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return false;
+  }
+
+  const fechaObjeto = new Date(`${fecha}T00:00:00Z`);
+
+  return (
+    !Number.isNaN(fechaObjeto.getTime()) &&
+    fechaObjeto.toISOString().slice(0, 10) === fecha
+  );
+}
+
+// Intenta revertir una transacción sin ocultar el error original.
+async function revertirTransaccion(client, transaccionIniciada) {
+  if (!client || !transaccionIniciada) return;
+
+  try {
+    await client.query("ROLLBACK");
+  } catch (error) {
+    console.error("También ocurrió un error al revertir la transacción:", error);
+  }
+}
+
+// ==========================================
 // PREPARACIÓN DE LA BASE DE DATOS
 // ==========================================
 
@@ -445,23 +474,10 @@ app.get("/api/prestamos", async (req, res) => {
 
 // POST: registrar un préstamo.
 app.post("/api/prestamos", async (req, res) => {
-  const { libroId, lectorId, fechaPrestamo, fechaLimite } = req.body;
+  const { libroId, lectorId, fechaPrestamo, fechaLimite } = req.body || {};
 
   const libroIdNumero = Number(libroId);
   const lectorIdNumero = Number(lectorId);
-
-  const fechaValida = (fecha) => {
-    if (typeof fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      return false;
-    }
-
-    const fechaObjeto = new Date(`${fecha}T00:00:00Z`);
-
-    return (
-      !Number.isNaN(fechaObjeto.getTime()) &&
-      fechaObjeto.toISOString().slice(0, 10) === fecha
-    );
-  };
 
   if (
     !Number.isInteger(libroIdNumero) ||
@@ -477,12 +493,17 @@ app.post("/api/prestamos", async (req, res) => {
     });
   }
 
-  const client = await pool.connect();
+  let client;
+  let transaccionIniciada = false;
 
   try {
-    await client.query("BEGIN");
+    // La conexión también queda protegida por el try/catch.
+    client = await pool.connect();
 
-    // Verificar y bloquear el libro durante la operación.
+    await client.query("BEGIN");
+    transaccionIniciada = true;
+
+    // Bloquear el libro para evitar dos préstamos simultáneos del mismo ejemplar.
     const libroResultado = await client.query(
       "SELECT id, estado FROM libros WHERE id = $1 FOR UPDATE",
       [libroIdNumero]
@@ -490,6 +511,7 @@ app.post("/api/prestamos", async (req, res) => {
 
     if (libroResultado.rows.length === 0) {
       await client.query("ROLLBACK");
+      transaccionIniciada = false;
 
       return res.status(404).json({
         error: "No se encontró el libro seleccionado",
@@ -498,20 +520,22 @@ app.post("/api/prestamos", async (req, res) => {
 
     if (libroResultado.rows[0].estado !== "Disponible") {
       await client.query("ROLLBACK");
+      transaccionIniciada = false;
 
       return res.status(409).json({
         error: "El libro seleccionado no está disponible",
       });
     }
 
-    // Verificar que el lector exista.
+    // Bloquear también al lector para controlar solicitudes simultáneas.
     const lectorResultado = await client.query(
-      "SELECT id FROM lectores WHERE id = $1",
+      "SELECT id FROM lectores WHERE id = $1 FOR UPDATE",
       [lectorIdNumero]
     );
 
     if (lectorResultado.rows.length === 0) {
       await client.query("ROLLBACK");
+      transaccionIniciada = false;
 
       return res.status(404).json({
         error: "No se encontró el lector seleccionado",
@@ -529,13 +553,15 @@ app.post("/api/prestamos", async (req, res) => {
 
     if (prestamoActivo.rows.length > 0) {
       await client.query("ROLLBACK");
+      transaccionIniciada = false;
 
       return res.status(409).json({
         error: "Este lector ya tiene un préstamo activo. Debe devolverlo antes de solicitar otro.",
       });
     }
 
-    // Registrar el préstamo.
+    // Se permiten fechas pasadas para registrar historiales anteriores.
+    // La fecha límite no puede ser anterior a la fecha del préstamo.
     const nuevoPrestamo = await client.query(
       `INSERT INTO prestamos (
         libro_id,
@@ -555,20 +581,21 @@ app.post("/api/prestamos", async (req, res) => {
       [libroIdNumero, lectorIdNumero, fechaPrestamo, fechaLimite]
     );
 
-    // Cambiar el estado del libro.
+    // Actualizar el estado del libro dentro de la misma transacción.
     await client.query(
       "UPDATE libros SET estado = 'Prestado' WHERE id = $1",
       [libroIdNumero]
     );
 
     await client.query("COMMIT");
+    transaccionIniciada = false;
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Préstamo registrado correctamente",
       prestamo: nuevoPrestamo.rows[0],
     });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await revertirTransaccion(client, transaccionIniciada);
 
     console.error("Error al registrar préstamo:", error);
 
@@ -578,11 +605,13 @@ app.post("/api/prestamos", async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "No fue posible registrar el préstamo",
     });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 });
 
@@ -596,12 +625,17 @@ app.put("/api/prestamos/:id/devolucion", async (req, res) => {
     });
   }
 
-  const client = await pool.connect();
+  let client;
+  let transaccionIniciada = false;
 
   try {
-    await client.query("BEGIN");
+    // La conexión también queda protegida por el try/catch.
+    client = await pool.connect();
 
-    // Buscar y bloquear el préstamo.
+    await client.query("BEGIN");
+    transaccionIniciada = true;
+
+    // Buscar y bloquear el préstamo para impedir devoluciones simultáneas.
     const prestamoActual = await client.query(
       `SELECT id, libro_id, estado
        FROM prestamos
@@ -612,6 +646,7 @@ app.put("/api/prestamos/:id/devolucion", async (req, res) => {
 
     if (prestamoActual.rows.length === 0) {
       await client.query("ROLLBACK");
+      transaccionIniciada = false;
 
       return res.status(404).json({
         error: "No se encontró el préstamo",
@@ -622,6 +657,7 @@ app.put("/api/prestamos/:id/devolucion", async (req, res) => {
 
     if (prestamo.estado !== "Activo") {
       await client.query("ROLLBACK");
+      transaccionIniciada = false;
 
       return res.status(409).json({
         error: "Este préstamo ya fue devuelto",
@@ -645,28 +681,31 @@ app.put("/api/prestamos/:id/devolucion", async (req, res) => {
       [id]
     );
 
-    // Devolver el libro al inventario.
+    // Devolver el libro al inventario dentro de la misma transacción.
     await client.query(
       "UPDATE libros SET estado = 'Disponible' WHERE id = $1",
       [prestamo.libro_id]
     );
 
     await client.query("COMMIT");
+    transaccionIniciada = false;
 
-    res.json({
+    return res.json({
       message: "Devolución registrada correctamente",
       prestamo: actualizado.rows[0],
     });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await revertirTransaccion(client, transaccionIniciada);
 
     console.error("Error al registrar devolución:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "No fue posible registrar la devolución",
     });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 });
 
