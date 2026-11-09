@@ -8,6 +8,10 @@ import {
   crearLibro,
   actualizarLibro,
   eliminarLibroAPI,
+  obtenerLectores,
+  crearLector,
+  actualizarLector,
+  eliminarLectorAPI,
 } from "./services/api";
 
 // Importaciones de Libros
@@ -40,11 +44,10 @@ function App() {
   // Los libros ahora se consultan desde PostgreSQL.
   const [libros, setLibros] = useState([]);
 
-  // Los lectores y préstamos siguen usando localStorage temporalmente.
-  const [lectores, setLectores] = useState(() =>
-    leerDatos("bibgest-lectores", [])
-  );
+  // Los lectores ahora se consultan desde PostgreSQL.
+  const [lectores, setLectores] = useState([]);
 
+  // Los préstamos siguen usando localStorage temporalmente.
   const [prestamos, setPrestamos] = useState(() =>
     leerDatos("bibgest-prestamos", [])
   );
@@ -89,22 +92,26 @@ function App() {
   useEffect(() => {
     let componenteActivo = true;
 
-    async function conectarYConsultarLibros() {
+    async function conectarYConsultarDatos() {
       try {
         // Comprobar conexión con el backend.
         await probarConexionBackend();
 
-        // Consultar los libros almacenados en PostgreSQL.
-        const librosBD = await obtenerLibros();
+        // Consultar los libros y lectores almacenados en PostgreSQL.
+        const [librosBD, lectoresBD] = await Promise.all([
+          obtenerLibros(),
+          obtenerLectores(),
+        ]);
 
         if (componenteActivo) {
           setLibros(librosBD);
+          setLectores(lectoresBD);
           setBackendConectado(true);
           setEstadoBackend("Backend conectado");
         }
       } catch (error) {
         console.error(
-          "No fue posible conectar o consultar los libros:",
+          "No fue posible conectar o consultar los datos:",
           error
         );
 
@@ -115,7 +122,7 @@ function App() {
       }
     }
 
-    conectarYConsultarLibros();
+    conectarYConsultarDatos();
 
     return () => {
       componenteActivo = false;
@@ -123,12 +130,8 @@ function App() {
   }, []);
 
   // ==========================================
-  // GUARDADO TEMPORAL DE LECTORES Y PRÉSTAMOS
+  // GUARDADO TEMPORAL DE PRÉSTAMOS
   // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem("bibgest-lectores", JSON.stringify(lectores));
-  }, [lectores]);
 
   useEffect(() => {
     localStorage.setItem("bibgest-prestamos", JSON.stringify(prestamos));
@@ -302,17 +305,17 @@ function App() {
   }
 
   // ==========================================
-  // CRUD DE LECTORES - LOCALSTORAGE TEMPORAL
+  // CRUD DE LECTORES - POSTGRESQL
   // ==========================================
 
-  function guardarLector(event) {
+  async function guardarLector(event) {
     event.preventDefault();
 
-    if (
-      !nombreLector.trim() ||
-      !documentoLector.trim() ||
-      !correoLector.trim()
-    ) {
+    const nombreLimpio = nombreLector.trim();
+    const documentoLimpio = documentoLector.trim();
+    const correoLimpio = correoLector.trim();
+
+    if (!nombreLimpio || !documentoLimpio || !correoLimpio) {
       setMensaje("Completa todos los datos del lector.");
       return;
     }
@@ -320,8 +323,8 @@ function App() {
     const documentoExiste = lectores.some(
       (lector) =>
         lector.documento.trim().toLowerCase() ===
-          documentoLector.trim().toLowerCase() &&
-        lector.id !== lectorEditando?.id
+          documentoLimpio.toLowerCase() &&
+        Number(lector.id) !== Number(lectorEditando?.id)
     );
 
     if (documentoExiste) {
@@ -329,40 +332,50 @@ function App() {
       return;
     }
 
-    if (lectorEditando) {
-      setLectores((actuales) =>
-        actuales.map((lector) =>
-          lector.id === lectorEditando.id
-            ? {
-                ...lector,
-                nombre: nombreLector.trim(),
-                documento: documentoLector.trim(),
-                correo: correoLector.trim(),
-              }
-            : lector
-        )
-      );
+    const datosLector = {
+      nombre: nombreLimpio,
+      documento: documentoLimpio,
+      correo: correoLimpio,
+    };
 
-      setMensaje("Lector actualizado correctamente.");
-    } else {
-      setLectores((actuales) => [
-        ...actuales,
-        {
-          id: Date.now(),
-          nombre: nombreLector.trim(),
-          documento: documentoLector.trim(),
-          correo: correoLector.trim(),
-        },
-      ]);
+    try {
+      if (lectorEditando) {
+        // Actualizar lector en PostgreSQL.
+        const respuesta = await actualizarLector(
+          lectorEditando.id,
+          datosLector
+        );
 
-      setMensaje("Lector registrado correctamente.");
+        setLectores((actuales) =>
+          actuales.map((lector) =>
+            Number(lector.id) === Number(lectorEditando.id)
+              ? respuesta.lector
+              : lector
+          )
+        );
+
+        setMensaje("Lector actualizado correctamente en PostgreSQL.");
+      } else {
+        // Registrar lector en PostgreSQL.
+        const respuesta = await crearLector(datosLector);
+
+        setLectores((actuales) => [
+          ...actuales,
+          respuesta.lector,
+        ]);
+
+        setMensaje("Lector registrado correctamente en PostgreSQL.");
+      }
+
+      setNombreLector("");
+      setDocumentoLector("");
+      setCorreoLector("");
+      setLectorEditando(null);
+      setMostrarFormularioLector(false);
+    } catch (error) {
+      console.error("Error al guardar el lector:", error);
+      setMensaje(error.message || "No fue posible guardar el lector.");
     }
-
-    setNombreLector("");
-    setDocumentoLector("");
-    setCorreoLector("");
-    setLectorEditando(null);
-    setMostrarFormularioLector(false);
   }
 
   function editarLector(lector) {
@@ -374,9 +387,10 @@ function App() {
     setMensaje("");
   }
 
-  function eliminarLector(lector) {
+  async function eliminarLector(lector) {
     const tienePrestamoActivo = prestamosActivos.some(
-      (prestamo) => prestamo.lectorId === lector.id
+      (prestamo) =>
+        Number(prestamo.lectorId) === Number(lector.id)
     );
 
     if (tienePrestamoActivo) {
@@ -394,11 +408,22 @@ function App() {
       return;
     }
 
-    setLectores((actuales) =>
-      actuales.filter((item) => item.id !== lector.id)
-    );
+    try {
+      // Eliminar lector de PostgreSQL.
+      await eliminarLectorAPI(lector.id);
 
-    setMensaje("Lector eliminado correctamente.");
+      // Actualizar la lista en React.
+      setLectores((actuales) =>
+        actuales.filter(
+          (item) => Number(item.id) !== Number(lector.id)
+        )
+      );
+
+      setMensaje("Lector eliminado correctamente de PostgreSQL.");
+    } catch (error) {
+      console.error("Error al eliminar el lector:", error);
+      setMensaje(error.message || "No fue posible eliminar el lector.");
+    }
   }
 
   // ==========================================

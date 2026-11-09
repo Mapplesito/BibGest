@@ -28,6 +28,10 @@ export async function probarConexionBackend() {
   return solicitarAPI("/test");
 }
 
+// ==========================================
+// FUNCIONES DE LIBROS
+// ==========================================
+
 // Consultar todos los libros.
 export async function obtenerLibros() {
   return solicitarAPI("/libros");
@@ -52,6 +56,38 @@ export async function actualizarLibro(id, libro) {
 // Eliminar un libro.
 export async function eliminarLibroAPI(id) {
   return solicitarAPI(`/libros/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ==========================================
+// FUNCIONES DE LECTORES
+// ==========================================
+
+// Consultar todos los lectores.
+export async function obtenerLectores() {
+  return solicitarAPI("/lectores");
+}
+
+// Registrar un lector.
+export async function crearLector(lector) {
+  return solicitarAPI("/lectores", {
+    method: "POST",
+    body: JSON.stringify(lector),
+  });
+}
+
+// Actualizar un lector.
+export async function actualizarLector(id, lector) {
+  return solicitarAPI(`/lectores/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(lector),
+  });
+}
+
+// Eliminar un lector.
+export async function eliminarLectorAPI(id) {
+  return solicitarAPI(`/lectores/${id}`, {
     method: "DELETE",
   });
 }
