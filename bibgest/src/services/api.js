@@ -1,3 +1,4 @@
+
 // Dirección del backend publicado por Docker.
 const API_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -89,5 +90,33 @@ export async function actualizarLector(id, lector) {
 export async function eliminarLectorAPI(id) {
   return solicitarAPI(`/lectores/${id}`, {
     method: "DELETE",
+  });
+}
+
+// ==========================================
+// FUNCIONES DE PRÉSTAMOS
+// ==========================================
+
+// Consultar todos los préstamos.
+export async function obtenerPrestamos() {
+  return solicitarAPI("/prestamos");
+}
+
+// Registrar un préstamo.
+export async function crearPrestamo(prestamo) {
+  return solicitarAPI("/prestamos", {
+    method: "POST",
+    body: JSON.stringify(prestamo),
+  });
+}
+
+// ==========================================
+// FUNCIONES DE DEVOLUCIONES
+// ==========================================
+
+// Registrar la devolución de un préstamo.
+export async function registrarDevolucionAPI(id) {
+  return solicitarAPI(`/prestamos/${id}/devolucion`, {
+    method: "PUT",
   });
 }

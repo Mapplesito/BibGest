@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import "./styles/index.css";
 
@@ -12,6 +13,9 @@ import {
   crearLector,
   actualizarLector,
   eliminarLectorAPI,
+  obtenerPrestamos,
+  crearPrestamo,
+  registrarDevolucionAPI,
 } from "./services/api";
 
 // Importaciones de Libros
@@ -31,26 +35,15 @@ import { HistorialPrestamos } from "./components/prestamos/HistorialPrestamos";
 
 const fechaHoy = () => new Date().toLocaleDateString("en-CA");
 
-function leerDatos(clave, inicial) {
-  try {
-    const guardado = localStorage.getItem(clave);
-    return guardado ? JSON.parse(guardado) : inicial;
-  } catch {
-    return inicial;
-  }
-}
-
 function App() {
-  // Los libros ahora se consultan desde PostgreSQL.
+  // Los libros se consultan desde PostgreSQL.
   const [libros, setLibros] = useState([]);
 
-  // Los lectores ahora se consultan desde PostgreSQL.
+  // Los lectores se consultan desde PostgreSQL.
   const [lectores, setLectores] = useState([]);
 
-  // Los préstamos siguen usando localStorage temporalmente.
-  const [prestamos, setPrestamos] = useState(() =>
-    leerDatos("bibgest-prestamos", [])
-  );
+  // Los préstamos se consultan desde PostgreSQL.
+  const [prestamos, setPrestamos] = useState([]);
 
   const [seccionActiva, setSeccionActiva] = useState("inicio");
   const [busquedaLibros, setBusquedaLibros] = useState("");
@@ -97,15 +90,17 @@ function App() {
         // Comprobar conexión con el backend.
         await probarConexionBackend();
 
-        // Consultar los libros y lectores almacenados en PostgreSQL.
-        const [librosBD, lectoresBD] = await Promise.all([
+        // Consultar libros, lectores y préstamos almacenados en PostgreSQL.
+        const [librosBD, lectoresBD, prestamosBD] = await Promise.all([
           obtenerLibros(),
           obtenerLectores(),
+          obtenerPrestamos(),
         ]);
 
         if (componenteActivo) {
           setLibros(librosBD);
           setLectores(lectoresBD);
+          setPrestamos(prestamosBD);
           setBackendConectado(true);
           setEstadoBackend("Backend conectado");
         }
@@ -128,14 +123,6 @@ function App() {
       componenteActivo = false;
     };
   }, []);
-
-  // ==========================================
-  // GUARDADO TEMPORAL DE PRÉSTAMOS
-  // ==========================================
-
-  useEffect(() => {
-    localStorage.setItem("bibgest-prestamos", JSON.stringify(prestamos));
-  }, [prestamos]);
 
   // ==========================================
   // FILTROS Y ESTADÍSTICAS
@@ -266,14 +253,14 @@ function App() {
   }
 
   async function eliminarLibro(libro) {
-    const tienePrestamoActivo = prestamosActivos.some(
+    const tieneHistorialPrestamos = prestamos.some(
       (prestamo) =>
         Number(prestamo.libroId) === Number(libro.id)
     );
 
-    if (tienePrestamoActivo) {
+    if (tieneHistorialPrestamos) {
       setMensaje(
-        "No puedes eliminar un libro que tiene un préstamo activo."
+        "No puedes eliminar un libro que tiene préstamos registrados en su historial."
       );
       return;
     }
@@ -388,14 +375,14 @@ function App() {
   }
 
   async function eliminarLector(lector) {
-    const tienePrestamoActivo = prestamosActivos.some(
+    const tieneHistorialPrestamos = prestamos.some(
       (prestamo) =>
         Number(prestamo.lectorId) === Number(lector.id)
     );
 
-    if (tienePrestamoActivo) {
+    if (tieneHistorialPrestamos) {
       setMensaje(
-        "No puedes eliminar un lector que tiene préstamos activos."
+        "No puedes eliminar un lector que tiene préstamos registrados en su historial."
       );
       return;
     }
@@ -427,10 +414,10 @@ function App() {
   }
 
   // ==========================================
-  // PRÉSTAMOS - LOCALSTORAGE TEMPORAL
+  // PRÉSTAMOS - POSTGRESQL
   // ==========================================
 
-  function registrarPrestamo(event) {
+  async function registrarPrestamo(event) {
     event.preventDefault();
 
     const libroId = Number(libroSeleccionado);
@@ -445,9 +432,7 @@ function App() {
       return;
     }
 
-    if (
-      !lectores.some((lector) => Number(lector.id) === lectorId)
-    ) {
+    if (!lectores.some((lector) => Number(lector.id) === lectorId)) {
       setMensaje("Selecciona un lector registrado.");
       return;
     }
@@ -476,41 +461,44 @@ function App() {
       return;
     }
 
-    const nuevoPrestamo = {
-      id: Date.now(),
-      libroId,
-      lectorId,
-      fechaPrestamo,
-      fechaLimite,
-      fechaDevolucionReal: null,
-      estado: "Activo",
-    };
+    try {
+      // Registrar el préstamo en PostgreSQL.
+      const respuesta = await crearPrestamo({
+        libroId,
+        lectorId,
+        fechaPrestamo,
+        fechaLimite,
+      });
 
-    setPrestamos((actuales) => [
-      ...actuales,
-      nuevoPrestamo,
-    ]);
+      // Actualizar el historial en React con el registro de PostgreSQL.
+      setPrestamos((actuales) => [
+        ...actuales,
+        respuesta.prestamo,
+      ]);
 
-    // Por ahora el estado del libro se actualiza en React.
-    // La sincronización de préstamos con PostgreSQL vendrá después.
-    setLibros((actuales) =>
-      actuales.map((item) =>
-        Number(item.id) === libroId
-          ? { ...item, estado: "Prestado" }
-          : item
-      )
-    );
+      // El backend también actualiza el estado del libro en PostgreSQL.
+      setLibros((actuales) =>
+        actuales.map((item) =>
+          Number(item.id) === libroId
+            ? { ...item, estado: "Prestado" }
+            : item
+        )
+      );
 
-    setLibroSeleccionado("");
-    setLectorSeleccionado("");
-    setFechaPrestamo(fechaHoy());
-    setFechaLimite("");
-    setMostrarFormularioPrestamo(false);
+      setLibroSeleccionado("");
+      setLectorSeleccionado("");
+      setFechaPrestamo(fechaHoy());
+      setFechaLimite("");
+      setMostrarFormularioPrestamo(false);
 
-    setMensaje("Préstamo registrado correctamente.");
+      setMensaje("Préstamo registrado correctamente en PostgreSQL.");
+    } catch (error) {
+      console.error("Error al registrar el préstamo:", error);
+      setMensaje(error.message || "No fue posible registrar el préstamo.");
+    }
   }
 
-  function registrarDevolucion(prestamo) {
+  async function registrarDevolucion(prestamo) {
     if (prestamo.estado !== "Activo") {
       return;
     }
@@ -523,29 +511,35 @@ function App() {
       return;
     }
 
-    setPrestamos((actuales) =>
-      actuales.map((item) =>
-        item.id === prestamo.id
-          ? {
-              ...item,
-              estado: "Devuelto",
-              fechaDevolucionReal: fechaHoy(),
-            }
-          : item
-      )
-    );
+    try {
+      // Registrar la devolución en PostgreSQL.
+      const respuesta = await registrarDevolucionAPI(prestamo.id);
 
-    setLibros((actuales) =>
-      actuales.map((libro) =>
-        Number(libro.id) === Number(prestamo.libroId)
-          ? { ...libro, estado: "Disponible" }
-          : libro
-      )
-    );
+      // Actualizar el préstamo con los datos confirmados por el backend.
+      setPrestamos((actuales) =>
+        actuales.map((item) =>
+          Number(item.id) === Number(prestamo.id)
+            ? respuesta.prestamo
+            : item
+        )
+      );
 
-    setMensaje(
-      "Devolución registrada. El libro está disponible nuevamente."
-    );
+      // El backend también actualiza el estado del libro en PostgreSQL.
+      setLibros((actuales) =>
+        actuales.map((libro) =>
+          Number(libro.id) === Number(prestamo.libroId)
+            ? { ...libro, estado: "Disponible" }
+            : libro
+        )
+      );
+
+      setMensaje(
+        "Devolución registrada correctamente. El libro está disponible nuevamente."
+      );
+    } catch (error) {
+      console.error("Error al registrar la devolución:", error);
+      setMensaje(error.message || "No fue posible registrar la devolución.");
+    }
   }
 
   // ==========================================
