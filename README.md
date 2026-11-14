@@ -75,7 +75,7 @@ BibGest/
 
 Los diagramas del sistema están en la carpeta [`docs/`](./docs):
 
-- **Casos de uso:** `docs/Diagrama_flujo.pdf`
+- **Diagrama de flujo:** `docs/Diagrama_flujo.pdf`
 - **Diagrama de clases:** `docs/Diagrama_Clases.pdf`
 - **Diagrama de secuencia:** `docs/Diagrama_Secuencia.pdf`
 
