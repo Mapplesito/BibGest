@@ -25,8 +25,8 @@ El proyecto resuelve la problemática del control manual y los registros dispers
 ## 🚀 3. Requisitos Funcionales (RF) y No Funcionales (RNF)
 
 ### Requisitos Funcionales
-- **RF01 - Gestión de Títulos:** Alta, edición, consulta y desactivación de registros bibliográficos (ISBN, título, autor, editorial, categoría).
-- **RF02 - Gestión de Ejemplares:** Control de copias físicas vinculadas a un título con identificador único y estados dinámicos (*Disponible*, *Prestado*, *En mantenimiento*).
+- **RF01 - Gestión de Títulos:** Alta, edición, consulta y desactivación de registros bibliográficos (título, autor).
+- **RF02 - Gestión de Ejemplares:** Control de copias físicas vinculadas a un título con identificador único y estados dinámicos (*Disponible*, *Prestado*).
 - **RF03 - Gestión de Lectores:** Administración de datos de identificación y contacto de los usuarios autorizados.
 - **RF04 - Control de Préstamos:** Vinculación de un lector con un ejemplar disponible, validando restricciones y asignando fechas de devolución.
 - **RF05 - Registro de Devoluciones:** Cierre de préstamos activos y actualización automática de la disponibilidad del ejemplar.
